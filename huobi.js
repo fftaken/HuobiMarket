@@ -21,8 +21,8 @@ class Huobi {
     }
 
     // 动态k线图接口地址
-    klineApi(currency, size) {
-        return `https://api.huobi.br.com/market/history/kline?symbol=${currency}${this.currencyType}&period=1min&size=${size || 1}`;
+    klineApi(currency, time, size) {
+        return `https://api.huobi.br.com/market/history/kline?symbol=${currency}${this.currencyType}&period=${time || '1day'}&size=${size || 1}`;
     }
 
     // 获取所有币种
@@ -72,7 +72,20 @@ class Huobi {
                 url: this.klineApi(item.currency.text.toLowerCase()),
                 handler: (res) => {
                     let kline = res.data && res.data.data;
-                    let a = (kline[0].close - kline[0].open) / kline[0].open * 100;
+                    let range = (kline[0].close - kline[0].open) / kline[0].open * 100;
+                    if (kline[0].close === kline[0].open) {
+                        item.range.text = '0%';
+                        item.raiseRange.text = '';
+                        item.fallRange.text = '';
+                    } else if (range > 0) {
+                        item.range.text = '';
+                        item.raiseRange.text = `+${range.toFixed(2)}%`;
+                        item.fallRange.text = '';
+                    } else {
+                        item.range.text = '';
+                        item.raiseRange.text = '';
+                        item.fallRange.text = `${range.toFixed(2)}%`;
+                    }
                     item.price.text = kline[0].close.toFixed(item.pricePrecision);
                 }
             });
@@ -122,6 +135,12 @@ class Huobi {
                 },
                 range: {
                     text: '0%',
+                },
+                raiseRange: {
+                    text: '',
+                },
+                fallRange: {
+                    text: '',
                 },
                 pricePrecision: item['price-precision'],
             });
@@ -283,9 +302,6 @@ class Huobi {
                     },
                     events: {
                         changed: (sender) => {
-                            var items = sender.items
-                            var index = sender.index
-                            $ui.toast(index + ": " + items[index])
                             this.renderCurrencys();
                         },
                     },
